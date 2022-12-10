@@ -69,7 +69,7 @@ class DatabaseHelper {
       };
 
       return await db
-          .update(diaryTable, row, where: "date=?", whereArgs: [diary.date]);
+          .update(diaryTable, row, where: "date = ?", whereArgs: [diary.date]);
     }
   }
 

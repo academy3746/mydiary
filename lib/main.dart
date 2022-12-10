@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mydiary/data/diary.dart';
+import 'package:mydiary/data/util.dart';
+import 'package:mydiary/write.dart';
 
 void main() {
   runApp(const MyApp());
@@ -34,11 +37,24 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(""),
+        title: const Text(""),
       ),
-      body: Container(child: getPage(),),
+      body: Container(
+        child: getPage(),
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () async {
+          await Navigator.of(context).push(MaterialPageRoute(
+            builder: (ctx) => DiaryWritePage(
+              diary: Diary(
+                  date: Utils.getFormatTime(DateTime.now()),
+                  title: "",
+                  memo: "",
+                  status: 0,
+                  image: "assets/img/a1.jpg"),
+            ),
+          ));
+        },
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ),
@@ -76,14 +92,17 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  // 오늘 Page
   Widget getTodayPage() {
     return Container();
   }
 
+  // 기록 Page
   Widget getHistoryPage() {
     return Container();
   }
 
+  // 통계 Page
   Widget getChartPage() {
     return Container();
   }
