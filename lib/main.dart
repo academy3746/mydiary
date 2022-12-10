@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mydiary/data/dbconfig.dart';
 import 'package:mydiary/data/diary.dart';
 import 'package:mydiary/data/util.dart';
 import 'package:mydiary/write.dart';
@@ -32,28 +33,63 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int selectIndex = 0;
+  final dbHelper = DatabaseHelper.instance;
+  Diary todayDiary;
+  List<String> statusImg = [
+    "assets/img/ico-weather.png",
+    "assets/img/ico-weather_2.png",
+    "assets/img/ico-weather_3.png",
+  ];
+
+  void getTodayDiary() async {
+    List<Diary> diary =
+        await dbHelper.getDiaryByDate(Utils.getFormatTime(DateTime.now()));
+
+    if (diary.isNotEmpty) {
+      todayDiary = diary.first;
+    }
+
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    // setState() 호출 불가
+    super.initState();
+    getTodayDiary();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
+      /*
       appBar: AppBar(
         title: const Text(""),
       ),
+      */
+
       body: Container(
         child: getPage(),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
+          Diary d_;
+          if (todayDiary != null) {
+            d_ = todayDiary;
+          } else {
+            d_ = Diary(
+                date: Utils.getFormatTime(DateTime.now()),
+                title: "",
+                memo: "",
+                status: 0,
+                image: "assets/img/a1.jpg");
+          }
           await Navigator.of(context).push(MaterialPageRoute(
-            builder: (ctx) => DiaryWritePage(
-              diary: Diary(
-                  date: Utils.getFormatTime(DateTime.now()),
-                  title: "",
-                  memo: "",
-                  status: 0,
-                  image: "assets/img/a1.jpg"),
-            ),
+            builder: (ctx) => DiaryWritePage(diary: d_),
           ));
+          // On Test
+          getTodayDiary();
         },
         tooltip: 'Increment',
         child: const Icon(Icons.add),
@@ -94,7 +130,76 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // 오늘 Page
   Widget getTodayPage() {
-    return Container();
+    if (todayDiary == null) {
+      return Container(
+        child: const Text(
+          "오늘의 다이어리를 작성하지 않았습니다.",
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        ),
+      );
+    }
+
+    return Container(
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              todayDiary.image,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
+            child: ListView(
+              children: [
+                Container(
+                  margin:
+                  const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "${DateTime.now().month}.${DateTime.now().day}",
+                        style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
+                      ),
+                      Image.asset(
+                        statusImg[todayDiary.status],
+                        fit: BoxFit.contain,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  margin:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white54,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(todayDiary.title,
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      Container(
+                        height: 12,
+                      ),
+                      Text(todayDiary.memo,
+                          style: const TextStyle(fontSize: 16)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // 기록 Page

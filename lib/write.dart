@@ -49,6 +49,8 @@ class _DiaryWritePageState extends State<DiaryWritePage> {
         actions: [
           TextButton(
             onPressed: () async {
+              widget.diary.title = nameController.text;
+              widget.diary.memo = memoController.text;
               // Mount Property
               await dbHelper.insertDiary(widget.diary);
               if (!mounted) return;
