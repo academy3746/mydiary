@@ -3,6 +3,7 @@ import 'package:mydiary/data/dbconfig.dart';
 import 'package:mydiary/data/diary.dart';
 import 'package:mydiary/data/util.dart';
 import 'package:mydiary/write.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,11 +36,16 @@ class _MyHomePageState extends State<MyHomePage> {
   int selectIndex = 0;
   final dbHelper = DatabaseHelper.instance;
   Diary todayDiary;
+  Diary historyDiary;
   List<String> statusImg = [
     "assets/img/ico-weather.png",
     "assets/img/ico-weather_2.png",
     "assets/img/ico-weather_3.png",
   ];
+
+  DateTime time = DateTime.now();
+
+  CalendarController calendarController = CalendarController();
 
   void getTodayDiary() async {
     List<Diary> diary =
@@ -62,7 +68,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       /*
       appBar: AppBar(
         title: const Text(""),
@@ -74,6 +79,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
+          if (selectIndex == 0) {
           Diary d_;
           if (todayDiary != null) {
             d_ = todayDiary;
@@ -90,6 +96,25 @@ class _MyHomePageState extends State<MyHomePage> {
           ));
           // On Test
           getTodayDiary();
+
+          } else {
+            Diary d_;
+            if (historyDiary != null) {
+              d_ = historyDiary;
+            } else {
+              d_ = Diary(
+                  date: Utils.getFormatTime(time),
+                  title: "",
+                  memo: "",
+                  status: 0,
+                  image: "assets/img/a1.jpg");
+            }
+            await Navigator.of(context).push(MaterialPageRoute(
+              builder: (ctx) => DiaryWritePage(diary: d_),
+            ));
+            // On Test
+            getDiaryByDate(time);
+          }
         },
         tooltip: 'Increment',
         child: const Icon(Icons.add),
@@ -153,7 +178,7 @@ class _MyHomePageState extends State<MyHomePage> {
               children: [
                 Container(
                   margin:
-                  const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -202,9 +227,92 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  void getDiaryByDate(DateTime date) async {
+    List<Diary> d = await dbHelper.getDiaryByDate(Utils.getFormatTime(date));
+
+    setState(() {
+      if (d.isEmpty) {
+        historyDiary = null;
+      } else {
+        historyDiary = d.first;
+      }
+    });
+  }
+
   // 기록 Page
   Widget getHistoryPage() {
-    return Container();
+    return Container(
+      child: ListView.builder(
+        itemBuilder: (ctx, idx) {
+          if (idx == 0) {
+            return Container(
+              child: TableCalendar(
+                calendarController: calendarController,
+                onDaySelected: (date, events, holidays) {
+                  print(date);
+                  time = date;
+                  getDiaryByDate(date);
+                },
+              ),
+            );
+          } else if (idx == 1) {
+            if (historyDiary == null) {
+              return Container();
+            }
+            return Column(
+              children: [
+                Container(
+                  margin:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "${time.month}.${time.day}",
+                        style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black),
+                      ),
+                      Image.asset(
+                        statusImg[historyDiary.status],
+                        fit: BoxFit.contain,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  margin:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white54,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(historyDiary.title,
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      Container(
+                        height: 12,
+                      ),
+                      Text(historyDiary.memo,
+                          style: const TextStyle(fontSize: 16)),
+                      Image.asset(historyDiary.image, fit: BoxFit.cover,),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          }
+          return Container();
+        },
+        itemCount: 2,
+      ),
+    );
   }
 
   // 통계 Page
