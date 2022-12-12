@@ -37,6 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final dbHelper = DatabaseHelper.instance;
   Diary todayDiary;
   Diary historyDiary;
+  List<Diary> allDiaries = [];
   List<String> statusImg = [
     "assets/img/ico-weather.png",
     "assets/img/ico-weather_2.png",
@@ -54,6 +55,12 @@ class _MyHomePageState extends State<MyHomePage> {
     if (diary.isNotEmpty) {
       todayDiary = diary.first;
     }
+
+    setState(() {});
+  }
+
+  void getAllDiary() async {
+    allDiaries = await dbHelper.getAllDiary();
 
     setState(() {});
   }
@@ -80,23 +87,22 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           if (selectIndex == 0) {
-          Diary d_;
-          if (todayDiary != null) {
-            d_ = todayDiary;
-          } else {
-            d_ = Diary(
-                date: Utils.getFormatTime(DateTime.now()),
-                title: "",
-                memo: "",
-                status: 0,
-                image: "assets/img/a1.jpg");
-          }
-          await Navigator.of(context).push(MaterialPageRoute(
-            builder: (ctx) => DiaryWritePage(diary: d_),
-          ));
-          // On Test
-          getTodayDiary();
-
+            Diary d_;
+            if (todayDiary != null) {
+              d_ = todayDiary;
+            } else {
+              d_ = Diary(
+                  date: Utils.getFormatTime(DateTime.now()),
+                  title: "",
+                  memo: "",
+                  status: 0,
+                  image: "assets/img/a1.jpg");
+            }
+            await Navigator.of(context).push(MaterialPageRoute(
+              builder: (ctx) => DiaryWritePage(diary: d_),
+            ));
+            // On Test
+            getTodayDiary();
           } else {
             Diary d_;
             if (historyDiary != null) {
@@ -138,6 +144,9 @@ class _MyHomePageState extends State<MyHomePage> {
           setState(() {
             selectIndex = idx;
           });
+          if (selectIndex == 2) {
+            getAllDiary();
+          }
         },
       ),
     );
@@ -249,7 +258,7 @@ class _MyHomePageState extends State<MyHomePage> {
               child: TableCalendar(
                 calendarController: calendarController,
                 onDaySelected: (date, events, holidays) {
-                  print(date);
+                  print(date); // Debug Code
                   time = date;
                   getDiaryByDate(date);
                 },
@@ -301,7 +310,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       Text(historyDiary.memo,
                           style: const TextStyle(fontSize: 16)),
-                      Image.asset(historyDiary.image, fit: BoxFit.cover,),
+                      Image.asset(
+                        historyDiary.image,
+                        fit: BoxFit.cover,
+                      ),
                     ],
                   ),
                 ),
@@ -317,6 +329,54 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // 통계 Page
   Widget getChartPage() {
-    return Container();
+    return Container(
+      child: ListView.builder(
+        itemBuilder: (ctx, idx) {
+          if (idx == 0) {
+            return Container(
+              margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(statusImg.length, (idx_) {
+                  return Container(
+                    child: Column(
+                      children: [
+                        Image.asset(
+                          statusImg[idx_],
+                          fit: BoxFit.contain,
+                        ),
+                        Text(
+                            "${allDiaries.where((element) => element.status == idx_).length}개"),
+                      ],
+                    ),
+                  );
+                }),
+              ),
+            );
+          } else if (idx == 1) {
+            return Container(
+              height: 120,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: List.generate(allDiaries.length, (idx_){
+                  return Container(
+                    height: 100,
+                    width: 100,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Image.asset(allDiaries[idx_].image, fit: BoxFit.cover,),
+                  );
+                },
+                ),
+              ),
+            );
+          }
+
+          return Container();
+        },
+        // 임의의 값
+        itemCount: 5,
+      ),
+    );
   }
 }
